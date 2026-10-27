@@ -1,26 +1,36 @@
-from flask import Flask, jsonify
-import pandas as pd
+import os
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 
-# DataFrame con los datos del ejemplo
-df = pd.DataFrame({
-    "producto": ["Teclado", "Mouse", "Monitor", "Audífonos"],
-    "ventas":   [12, 30, 7, 18],
-    "precio":   [450, 280, 3200, 600]
-})
+# Configuración de la conexión a PostgreSQL
+# (Reemplaza 'usuario', 'contraseña', 'localhost:5432' y 'mi_base_de_datos' con tus datos reales)
+app.config["SQLALCHEMY_DATABASE_URI"] = (
+    "postgresql://usuario:contraseña@localhost:5432/mi_base_de_datos"
+)
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+db = SQLAlchemy(app)
+
+
+# Ejemplo de una tabla (Modelo) para la base de datos
+class Registro(db.Model):
+  id = db.Column(db.Integer, primary_key=True)
+  mensaje = db.Column(db.String(200), nullable=False)
+
+  def __repr__(self):
+    return f"<Registro {self.mensaje}>"
+
 
 @app.route("/")
-def inicio():
-    return "<h1>Servidor Flask en Codespaces</h1><p><a href='/ventas'>Ver tabla</a> | <a href='/api/ventas'>Ver JSON</a></p>"
+def home():
+  return (
+      "¡Hola! Mi servidor Flask con PostgreSQL está configurado correctamente."
+  )
 
-@app.route("/ventas")
-def ventas():
-    return "<h1>Ventas</h1>" + df.to_html(index=False)
-
-@app.route("/api/ventas")
-def api_ventas():
-    return jsonify(df.to_dict(orient="records"))
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+  with app.app_context():
+    db.create_all()  # Crea las tablas en la base de datos si no existen
+  app.run(debug=True)
